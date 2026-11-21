@@ -39,13 +39,17 @@
     { id: 'brake.mode', type: 'select', label: 'Brake', v: 'off', options: [['off', 'Off'], ['stopper', 'Sheet on the door plate, under the latch magnets'], ['hanger', 'Magnets on the hanger, strip on the rail']] },
     { id: 'brake.conductor', type: 'select', label: 'Sheet', v: 'copper', options: Object.entries(PH.CONDUCTORS).map(([k, c]) => [k, c.label]), show: (V) => V['brake.mode'] !== 'off' },
     { id: 'brake.t', label: 'Sheet thickness', unit: 'mm', v: 2, min: 0.5, max: 10, step: 0.5, si: 1e-3, show: (V) => V['brake.mode'] !== 'off' },
+    { id: 'brake.width', label: 'Strip width', unit: 'mm', v: 30, min: 5, max: 80, step: 1, si: 1e-3, help: 'Centred on the magnets. The rail face is 40 mm high.', show: (V) => V['brake.mode'] !== 'off' },
+    { id: 'brake.alternate', type: 'check', label: 'Alternate N / S along the row', v: true, show: (V) => V['brake.mode'] !== 'off' },
     { id: 'brake.stripLen', label: 'Sheet length from the plate end', unit: 'mm', v: 30, min: 5, max: 200, step: 5, si: 1e-3, show: (V) => V['brake.mode'] === 'stopper' },
-    { id: 'brake.count', label: 'Magnets on each hanger', unit: '', v: 4, min: 1, max: 30, step: 1, si: 1, show: (V) => V['brake.mode'] === 'hanger' },
-    { id: 'brake.D', label: 'Brake magnet diameter', unit: 'mm', v: 20, min: 5, max: 60, step: 1, si: 1e-3, show: (V) => V['brake.mode'] === 'hanger' },
-    { id: 'brake.L', label: 'Brake magnet thickness', unit: 'mm', v: 10, min: 1, max: 30, step: 0.5, si: 1e-3, show: (V) => V['brake.mode'] === 'hanger' },
+    { id: 'brake.count', label: 'Magnets on each hanger', unit: '', v: 8, min: 1, max: 30, step: 1, si: 1, show: (V) => V['brake.mode'] === 'hanger' },
+    { id: 'brake.D', label: 'Brake magnet diameter', unit: 'mm', v: 15, min: 5, max: 60, step: 1, si: 1e-3, show: (V) => V['brake.mode'] === 'hanger' },
+    { id: 'brake.L', label: 'Brake magnet thickness', unit: 'mm', v: 5, min: 1, max: 30, step: 0.5, si: 1e-3, show: (V) => V['brake.mode'] === 'hanger' },
+    { id: 'brake.pitch', label: 'Magnet spacing, centre to centre', unit: 'mm', v: 16, min: 5, max: 60, step: 0.5, si: 1e-3, show: (V) => V['brake.mode'] === 'hanger' },
     { id: 'brake.grade', type: 'select', label: 'Brake magnet grade', v: 'N42', options: Object.keys(PH.GRADES).map((k) => [k, k]), show: (V) => V['brake.mode'] === 'hanger' },
-    { id: 'brake.gap', label: 'Gap, magnet to strip', unit: 'mm', v: 1.5, min: 0.3, max: 10, step: 0.1, si: 1e-3, show: (V) => V['brake.mode'] === 'hanger' },
-    { id: 'brake.zoneLen', label: 'Strip length from each stop', unit: 'mm', v: 200, min: 20, max: 600, step: 10, si: 1e-3, show: (V) => V['brake.mode'] === 'hanger' },
+    { id: 'brake.gap', label: 'Gap, magnet to strip', unit: 'mm', v: 3, min: 0.3, max: 10, step: 0.1, si: 1e-3, show: (V) => V['brake.mode'] === 'hanger' },
+    { id: 'brake.zoneLen', label: 'Strip length from each stop', unit: 'mm', v: 250, min: 20, max: 600, step: 10, si: 1e-3, show: (V) => V['brake.mode'] === 'hanger' },
+    { id: 'brake.zoneStart', label: 'Strip stops short of the stop by', unit: 'mm', v: 0, min: 0, max: 200, step: 5, si: 1e-3, help: 'A gap lets a strongly braked door coast the last bit into the latch instead of creeping to a halt.', show: (V) => V['brake.mode'] === 'hanger' },
     { id: 'brake.flangeMu', label: 'Friction from the side pull', unit: '', v: 0.05, min: 0, max: 0.3, step: 0.01, si: 1, help: 'The magnets pull the hanger towards the steel rail and the wheels rub. 0.02 with a guide roller, 0.15 if something slides.', show: (V) => V['brake.mode'] === 'hanger' },
 
     { g: 'Test' },
@@ -152,7 +156,78 @@
     updateQuestions();
     runTest(lastTest, true);
     clearTimeout(sweepTimer);
-    sweepTimer = setTimeout(runSweep, 350);
+    sweepTimer = setTimeout(() => { runSweep(); scheduleOptions(); }, 350);
+  }
+
+  // ---------------------------------------------------------------- brake options table
+  const OPT_ROWS = [
+    ['Copper tape 0.05 mm', 'copper', 0.05], ['Copper 1 mm', 'copper', 1], ['Copper 2 mm', 'copper', 2],
+    ['Copper 3 mm', 'copper', 3], ['Aluminium 2 mm', 'aluminium', 2], ['Aluminium 3 mm', 'aluminium', 3],
+  ];
+  const OPT_WIDTHS = [15, 20, 25, 30, 35, 40];
+  let optGen = 0, optKey = '';
+  function optionBase() {
+    // the setup the table is about: the current brake, or the rail strip if the brake is off
+    const b = { ...P.brake };
+    if (b.mode === 'off') b.mode = 'hanger';
+    return b;
+  }
+  function scheduleOptions() {
+    const b = optionBase();
+    const key = JSON.stringify([b, P.latch, P.door, P.bumper, P.test]);
+    if (key === optKey) return;
+    optKey = key;
+    const gen = ++optGen;
+    const el = $('#opt-table');
+    const start = Math.min(P.test.start, model.travel);
+    const where = b.mode === 'hanger'
+      ? `${b.count} × Ø${f1(b.D * 1e3)} × ${f1(b.L * 1e3)} mm ${b.grade} on the hanger, ${f1(b.pitch * 1e3)} mm apart, ${b.alternate ? 'alternating N/S' : 'all the same way'}, ${f1(b.gap * 1e3)} mm from the strip, steel rail behind, ${f1(b.zoneLen * 1e3)} mm of strip at each end`
+      : `the ${P.latch.count} latch magnet(s) over a sheet on the steel door plate, ${f1(b.stripLen * 1e3)} mm long`;
+    $('#opt-hint').textContent = `For ${where}. Speed at the bumper for a ${P.test.speed} m/s push from ${f1(start * 1e3)} mm, ✓ = ends latched. c = damping in N·s/m. Eddy braking only: the friction from the magnets' pull on the rail ("pull", in newtons) is left out here because its coefficient is a guess.`;
+    let html = '<table><thead><tr><th>Strip</th>' + OPT_WIDTHS.map((w) => `<th>${w} mm wide</th>`).join('') + '</tr></thead><tbody>';
+    for (const [name] of OPT_ROWS) html += `<tr><th>${name}</th>` + OPT_WIDTHS.map(() => '<td class="pending">…</td>').join('') + '</tr>';
+    html += '</tbody></table>';
+    el.innerHTML = html;
+    const cells = [];
+    OPT_ROWS.forEach((r, i) => OPT_WIDTHS.forEach((w, j) => cells.push([i, j, r, w])));
+    const noBrake = PH.classify(model, PH.simulate(PH.buildModel({ ...P, brake: { ...P.brake, mode: 'off' } }), { p0: start, v0: -P.test.speed, tMax: 10 }), 'closed');
+    const step = () => {
+      if (gen !== optGen) return;
+      const t0 = performance.now();
+      while (cells.length && performance.now() - t0 < 40) {
+        const [i, j, [, mat, tmm], w] = cells.shift();
+        const bb = { ...b, conductor: mat, t: tmm / 1000, width: w / 1000, flangeMu: 0 };
+        const M = PH.buildModel({ ...P, brake: bb });
+        const run = PH.simulate(M, { p0: start, v0: -P.test.speed, tMax: 10 });
+        const c = PH.classify(M, run, 'closed');
+        const td = el.querySelectorAll('tbody tr')[i].children[j + 1];
+        const cur = b.conductor === mat && Math.abs(b.t * 1000 - tmm) < 1e-6 && Math.abs(b.width * 1000 - w) < 0.5;
+        td.className = (c.ok ? 'ok' : 'bad') + (cur ? ' current' : '');
+        const side = M.brake && M.brake.sideLoad ? ` · ${M.brake.sideLoad.toFixed(0)} N pull` : '';
+        td.innerHTML = `<b>${c.contact ? c.impact.toFixed(2) + ' m/s' : 'stops short'}</b> ${c.ok ? '✓' : '✗'}<span>c ${(M.brake ? M.brake.cTotal : 0).toFixed(1)}${side}</span>`;
+        td.title = c.outcome;
+      }
+      if (cells.length) setTimeout(step, 0);
+      else optionsFooter(b, start, noBrake);
+    };
+    setTimeout(step, 0);
+  }
+  function optionsFooter(b, start, noBrake) {
+    const E = window.DoorEddy, M = PH.buildModel({ ...P, brake: b });
+    if (!M.brake) return;
+    const a = M.brake.eddyArgs;
+    const wide = E.damping({ ...a, width: 0.2 });
+    const flip = E.damping({ ...a, alternate: !a.alternate });
+    const bare = E.damping({ ...a, steelBack: false });
+    const zone = b.mode === 'stopper' ? b.stripLen : b.zoneLen;
+    const need = (M.m * Math.max(P.test.speed - 0.3, 0)) / zone;
+    $('#opt-notes').innerHTML = [
+      `No brake at all: <b>${noBrake.contact ? noBrake.impact.toFixed(2) + ' m/s' : 'stops short'}</b> at the bumper.`,
+      `Your current strip (${f1(a.width * 1e3)} mm) gives <b>${Math.round((100 * M.brake.cTotal) / wide)} %</b> of what a very wide strip would.`,
+      `${a.alternate ? 'All magnets the same way round' : 'Alternating N/S'} instead: c = <b>${f1(flip)}</b> N·s/m (now ${f1(M.brake.cTotal)}).`,
+      `Without steel behind the strip: c = <b>${f1(bare)}</b> N·s/m.`,
+      `To bring a ${P.test.speed} m/s push down to 0.3 m/s within ${f1(zone * 1e3)} mm needs about <b>${f1(need)}</b> N·s/m.`,
+    ].map((x) => `<li>${x}</li>`).join('');
   }
 
   // ---------------------------------------------------------------- derived
@@ -176,7 +251,7 @@
     } else dl.textContent = 'No latch magnets.';
     if (B) {
       const need = neededDamping();
-      db.innerHTML = `Damping <b>${f1(B.cTotal)} N·s/m</b> at each end (${f1(B.cPer)} per magnet, field in the sheet ${B.Beff.toFixed(2)} T).<br>
+      db.innerHTML = `Damping <b>${f1(B.cTotal)} N·s/m</b> at each end (${f1(B.cPer)} per magnet), from the eddy-current solution on the ${f1(P.brake.width * 1e3)} mm strip.<br>
         To slow a ${P.test.speed} m/s push to 0.3 m/s over this zone you need about <b>${f1(need)} N·s/m</b>.` +
         (B.sideLoad ? `<br>The brake magnets pull the hanger onto the steel rail with about <b>${f1(B.sideLoad)} N</b>.` : '');
     } else db.textContent = 'Brake off.';

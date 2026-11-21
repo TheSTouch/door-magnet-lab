@@ -18,8 +18,9 @@
 //   force comes from energy: when the plate slides out from under a magnet the
 //   stored energy U0(gap) = integral of the pull from gap to infinity is released,
 //   spread over the magnet diameter in proportion to the chord length.
-// - Eddy-current brake: a copper/aluminium sheet moving under magnets, low-speed
-//   drag F = c v with c = k sigma t B^2 A, falling off above a critical speed.
+// - Eddy-current brake: a copper/aluminium strip moving past a row of magnets.
+//   Low-speed drag F = c v, with c from a numerical thin-sheet solution on the
+//   real strip width (eddy.js), falling off above the sheet's critical speed.
 (function (global) {
   'use strict';
 
@@ -33,7 +34,6 @@
   // Calibration: the image-method pull underestimates datasheet adhesive force
   // by about 20-25 % for small N42 discs; 1.25 brings Ø15x5 N42 to ~46 N.
   const PULL_CAL = 1.25;
-  const EDDY_SHAPE = 0.35;   // fraction of the ideal sigma t B^2 A drag a disc gets
 
   // On-axis field of a cylinder magnet, z from its face.
   function bz(Br, R, L, z) {
@@ -138,31 +138,37 @@
   }
 
   // ---------- eddy-current brake ----------
+  // The damping comes from DoorEddy (eddy.js): a numerical thin-sheet solution on
+  // the real strip width, for the real magnet row (spacing, alternating poles),
+  // with the steel behind the sheet (rail or door plate) taken into account.
   function makeBrake(cfg, latchCfg) {
-    // cfg: { mode: 'off'|'stopper'|'hanger', conductor, t, stripLen,
-    //        count, D, L, grade, gap, zoneLen, flangeMu }
+    // cfg: { mode: 'off'|'stopper'|'hanger', conductor, t, width, stripLen,
+    //        count, D, L, grade, gap, pitch, alternate, zoneLen, flangeMu }
     if (!cfg || cfg.mode === 'off') return null;
     const sigmaC = (CONDUCTORS[cfg.conductor] || CONDUCTORS.copper).sigma;
     const t = cfg.t;
-    let m, gap, n, steelBack;
+    let m, gap, n, pitch;
     if (cfg.mode === 'stopper') {
       // the latch magnets brake on a sheet laid on the steel door plate
-      m = makeMagnet({ ...latchCfg, plateT: latchCfg.plateT });
+      if (!latchCfg.count) return null;
+      m = makeMagnet({ ...latchCfg });
       gap = latchCfg.skin + latchCfg.airGap;
       n = latchCfg.count;
-      steelBack = true;
+      pitch = latchCfg.spacing;
     } else {
       m = makeMagnet({ D: cfg.D, L: cfg.L, grade: cfg.grade, pullOverride: 0, plateT: 0.006 });
       gap = cfg.gap;
       n = cfg.count;
-      steelBack = true; // the rail is steel
+      pitch = Math.max(cfg.pitch, cfg.D);
     }
-    const Beff = m.field(gap + t / 2) + (steelBack ? m.field(gap + 1.5 * t) : 0);
-    const cPer = EDDY_SHAPE * sigmaC * t * Beff * Beff * m.A;
+    const eddyArgs = { D: m.R * 2, L: m.L, Br: m.Br, n, pitch, alternate: !!cfg.alternate,
+      gap, t, width: cfg.width, sigma: sigmaC, steelBack: true };
+    const cTotal = global.DoorEddy ? global.DoorEddy.damping(eddyArgs) : 0;
     const vCrit = 2 / (MU0 * sigmaC * t);   // thin-sheet characteristic speed
     // hanger mode: magnets attract the steel rail through the sheet -> side load
     const sideLoad = cfg.mode === 'hanger' ? n * m.pull(gap + t) : 0;
-    return { cfg, mag: m, gap, n, Beff, cPer, cTotal: cPer * n, vCrit, sideLoad };
+    const rowLen = (n - 1) * pitch + m.R * 2;
+    return { cfg, mag: m, gap, n, pitch, cPer: cTotal / n, cTotal, vCrit, sideLoad, rowLen, eddyArgs };
   }
 
   // ---------- full model ----------
@@ -193,8 +199,12 @@
         }
         return a / latch.offsets.length;
       }
-      const D = brake.mag.R * 2;
-      return Math.min(1, Math.max(0, (P.brake.zoneLen - dist) / D + 0.5));
+      // the magnet row enters the strip one magnet at a time
+      // the strip runs from zoneStart to zoneLen measured from the stop
+      const r = brake.rowLen, z0 = P.brake.zoneStart || 0;
+      const inFar = Math.min(1, Math.max(0, (P.brake.zoneLen - dist) / r + 0.5));
+      const inNear = z0 > 0 ? Math.min(1, Math.max(0, (dist - z0) / r + 0.5)) : 1;
+      return Math.min(inFar, inNear);
     }
     function brakeForce(v, act) {
       if (!brake || act <= 0) return 0;

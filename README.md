@@ -54,7 +54,7 @@ internet needed).
 | Bumper | Hunt–Crossley contact `F = k d^1.5 (1 + c d'/v_in)`, damping set from a restitution value |
 | Magnet pull | on-axis field of a cylinder magnet plus its image in the plate, scaled so Ø15 × 5 N42 ≈ 46 N on contact (or use the seller's figure); thin-plate saturation estimate |
 | Latch (sideways) | energy method: the pull integrated from the gap outwards (U0) is released as the plate slides under the magnet, spread over the magnet's chord, with fringing blur growing with the gap |
-| Eddy brake | `F = c v / (1 + (v/vc)^2)`, `c = 0.35 σ t B² A` per magnet, field doubled by steel behind the sheet |
+| Eddy brake | `F = c v / (1 + (v/vc)^2)`. `c` is solved numerically in `web/eddy.js`: thin-sheet currents on the real strip width (Neumann edges, exact DCT Poisson solve), exact off-axis field of each disc magnet, alternating poles, mirror image for the steel behind the strip. Checked against the exact point-dipole result to 0.05 % |
 
 All of these are estimates to be calibrated on the real door. The model ranks
 designs well; the exact numbers need the measurements listed at the bottom of the
@@ -66,12 +66,21 @@ page.
   (0.55 kg on a luggage scale) and store about 0.1 J.
 - With a bumper bounce of 0.5, that catches a door only if it hits the bumper below
   about 0.25 m/s. A normal 0.8 m/s push carries 3.9 J and bounces back out.
-- A copper sheet under the latch magnets barely slows it (about 2 N·s/m; about
-  40 N·s/m is needed). A real eddy brake needs many magnets along the last
-  200 mm. Mounted on the hanger, those magnets pull it against the steel rail with
-  about 200 N.
-- So the slow-down has to come mostly from a dead bumper (low bounce) or a
-  damper, with the magnets doing the latching.
+- A copper sheet under the latch magnets barely slows it: there is room for only a
+  short strip.
+- Rail strip with 8 × Ø15 × 5 mm magnets on the hanger, 16 mm apart, 3 mm from a
+  30 × 2 mm copper strip (eddy-current solution):
+  - **Alternate N/S** along the row: 7.8 N·s/m. With all the same way round it drops
+    to 0.9 N·s/m, 8× less.
+  - **Width:** 15 / 20 / 25 / 30 / 40 mm give 54 / 77 / 90 / 96 / 99 % of a very wide
+    strip.
+  - **Thickness:** copper tape (0.05 mm) 0.4, copper 1 mm 5.8, copper 2 mm 7.8,
+    copper 3 mm 8.1 N·s/m. The steel rail behind the strip multiplies it by 2.6.
+  - A 0.8 m/s push arrives at 0.63 m/s with 250 mm of strip, 0.45 m/s with 400 mm.
+- An eddy brake takes about the same speed, `c × length / mass`, off every push.
+  Any push slower than that stops in the strip before it reaches the latch. One
+  strip cannot both stop hard pushes and let gentle ones through; gentle closes
+  need something that keeps pulling the door in (slope, spring, long-reach magnet).
 
 ## License
 
