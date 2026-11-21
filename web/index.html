@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Door Magnet Lab</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="top">
+    <div>
+      <h1>Door Magnet Lab</h1>
+      <p class="sub">Barn-style sliding door on a steel flat-bar rail: slowing it down and latching it with magnets in the stopper.</p>
+    </div>
+    <div class="top-actions">
+      <button id="btn-reset" class="ghost" title="Back to the default values">Reset values</button>
+      <button id="btn-theme" class="ghost" title="Light / dark">◐</button>
+    </div>
+  </header>
+
+  <main class="layout">
+    <aside class="panel" id="params" aria-label="Parameters"></aside>
+
+    <section class="stage">
+      <div class="card testbar">
+        <div class="tests">
+          <button data-test="close" class="primary">▶ Push it closed</button>
+          <button data-test="open">▶ Push it open</button>
+          <button data-test="pull">▶ Pull it out of the latch</button>
+        </div>
+        <div class="play">
+          <button id="btn-play" class="ghost" aria-label="Play or pause">⏸</button>
+          <select id="play-speed" aria-label="Playback speed">
+            <option value="1">1×</option>
+            <option value="0.5">0.5×</option>
+            <option value="0.25" selected>0.25×</option>
+            <option value="0.1">0.1×</option>
+          </select>
+          <input id="scrub" type="range" min="0" max="1000" value="0" aria-label="Time">
+          <span id="clock" class="mono">0.00 s</span>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-h"><h2>Whole rail</h2><span class="hint">Closed stop on the left, open stop on the right. Schematic, to scale along the rail.</span></div>
+        <canvas id="track"></canvas>
+      </div>
+
+      <div class="row2">
+        <div class="card">
+          <div class="card-h"><h2 id="detail-title">Closed-side stopper, close up</h2><span class="hint">Magnet box under the stopper, steel plate on the door</span></div>
+          <canvas id="detail"></canvas>
+        </div>
+        <div class="card">
+          <div class="card-h"><h2>Result</h2><span class="hint" id="result-test"></span></div>
+          <div id="results" class="results"></div>
+        </div>
+      </div>
+
+      <div class="row3">
+        <div class="card"><div class="card-h"><h2>Distance from the stop</h2><span class="hint">mm (0 = touching the bumper)</span></div><div class="chart"><canvas id="ch-pos"></canvas></div></div>
+        <div class="card"><div class="card-h"><h2>Speed</h2><span class="hint">m/s, negative = closing</span></div><div class="chart"><canvas id="ch-vel"></canvas></div></div>
+        <div class="card"><div class="card-h"><h2>Magnet, brake and friction forces</h2><span class="hint">N, positive pushes open</span></div><div class="chart"><canvas id="ch-force"></canvas></div><div class="legend" id="lg-force"></div></div>
+      </div>
+
+      <div class="row2">
+        <div class="card">
+          <div class="card-h"><h2>Latch force near the stop</h2><span class="hint">N vs mm from the bumper, door held still. Negative = pulls it shut.</span></div>
+          <div class="chart"><canvas id="ch-map"></canvas></div>
+          <div class="legend" id="lg-map"></div>
+        </div>
+        <div class="card">
+          <div class="card-h"><h2>Push-speed sweep</h2><span class="hint" id="sweep-hint">Closing pushes from the start position</span></div>
+          <div class="chart"><canvas id="ch-sweep"></canvas></div>
+          <div class="legend"><span><i class="dot good"></i>✓ ends latched</span><span><i class="dot bad"></i>✗ bounced out / stopped short</span></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-h"><h2>What still needs measuring</h2><span class="hint">Each value in the left panel is a default until measured on the real door.</span></div>
+        <div id="questions" class="questions"></div>
+      </div>
+    </section>
+  </main>
+
+  <script src="physics.js"></script>
+  <script src="charts.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
