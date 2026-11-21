@@ -163,32 +163,66 @@
     dampCache.set(key, c);
     return c;
   }
+  // Bz of one uniformly charged rectangular face (a along x, b along y, centred
+  // at the origin) at (x, y) and axial distance z. Closed form.
+  function rectFace(a, b, x, y, z) {
+    const us = [a / 2 - x, -a / 2 - x], vs = [b / 2 - y, -b / 2 - y];
+    let s = 0;
+    for (let i = 0; i < 2; i++) for (let j = 0; j < 2; j++) {
+      const u = us[i], v = vs[j], r = Math.sqrt(u * u + v * v + z * z);
+      s += (i === j ? 1 : -1) * Math.atan((u * v) / (z * r));
+    }
+    return s / (4 * Math.PI);
+  }
+  // On-axis-or-anywhere Bz of a rectangular block magnet, z from its near face.
+  function bzBlock(Br, a, b, L, x, y, z) {
+    return Br * (rectFace(a, b, x, y, z) - rectFace(a, b, x, y, z + L));
+  }
+
+  // o: { shape: 'disc'|'block', D | a,b, L, Br, n|cols, rows, pitch, rowPitch,
+  //      alternate (checkerboard), gap, t, width, sigma, steelBack, backIron, offset, h }
+  //   backIron: the magnets sit on steel (snapped onto the hanger strap). An ideal
+  //   steel plate on the back face mirrors the magnet into one of twice the length.
   function dampingRaw(o) {
-    const R = o.D / 2;
-    const n = Math.max(1, Math.round(o.n));
-    const span = (n - 1) * o.pitch;
-    const margin = Math.max(6 * R, 3 * o.width, 0.04);
-    const Lx = span + 2 * margin;
+    const block = o.shape === 'block';
+    const cols = Math.max(1, Math.round(o.cols || o.n || 1)), rows = Math.max(1, Math.round(o.rows || 1));
+    const R = block ? Math.min(o.a, o.b) / 2 : o.D / 2;
+    const ext = block ? o.a / 2 : o.D / 2;
+    const spanX = (cols - 1) * o.pitch, spanY = (rows - 1) * (o.rowPitch || 0);
+    const margin = Math.max(6 * ext, 3 * o.width, 0.04);
+    const Lx = spanX + 2 * margin;
     const h = o.h || Math.max(Math.min(R / 5, o.width / 20), Lx / 300);  // converged to <0.1 %
-    const xs = [];
-    for (let k = 0; k < n; k++) xs.push({ x: -span / 2 + k * o.pitch, s: o.alternate && k % 2 ? -1 : 1 });
-    const rhoMax = Math.hypot(Lx / 2 + 0.01, o.width / 2 + Math.abs(o.offset || 0) + 0.01) + span;
-    const d = o.gap + o.t;                         // magnet face to the steel behind the sheet
-    // two-point Gauss through the sheet thickness
-    const g = 1 / Math.sqrt(3), layers = [o.gap + (o.t / 2) * (1 - g), o.gap + (o.t / 2) * (1 + g)];
     const off = o.offset || 0;
+    const mags = [];
+    for (let r = 0; r < rows; r++) for (let k = 0; k < cols; k++) {
+      mags.push({ x: -spanX / 2 + k * o.pitch, y: off - spanY / 2 + r * (o.rowPitch || 0), s: o.alternate && (k + r) % 2 ? -1 : 1 });
+    }
+    const Leff = o.backIron ? 2 * o.L : o.L;
+    const rhoMax = Math.hypot(Lx / 2 + 0.01, o.width / 2 + Math.abs(off) + spanY + 0.01) + spanX;
+    const d = o.gap + o.t;                         // magnet face to the steel behind the sheet
+    const g = 1 / Math.sqrt(3), layers = [o.gap + (o.t / 2) * (1 - g), o.gap + (o.t / 2) * (1 + g)];
     let c = 0;
     for (const z of layers) {
-      const f1 = fieldTable(o.Br, R, o.L, z, rhoMax);
-      const f2 = o.steelBack ? fieldTable(o.Br, R, o.L, 2 * d - z, rhoMax) : null;
-      const bzAt = (x, y) => {
-        let s = 0;
-        for (const m of xs) {
-          const rho = Math.hypot(x - m.x, y - off);   // off: magnet row offset across the strip
-          s += m.s * (f1(rho) + (f2 ? f2(rho) : 0));
-        }
-        return s;
-      };
+      let bzAt;
+      if (!block) {
+        const f1 = fieldTable(o.Br, R, Leff, z, rhoMax);
+        const f2 = o.steelBack ? fieldTable(o.Br, R, Leff, 2 * d - z, rhoMax) : null;
+        bzAt = (x, y) => {
+          let s = 0;
+          for (const m of mags) { const rho = Math.hypot(x - m.x, y - m.y); s += m.s * (f1(rho) + (f2 ? f2(rho) : 0)); }
+          return s;
+        };
+      } else {
+        const z2 = 2 * d - z;
+        bzAt = (x, y) => {
+          let s = 0;
+          for (const m of mags) {
+            const dx = x - m.x, dy = y - m.y;
+            s += m.s * (bzBlock(o.Br, o.a, o.b, Leff, dx, dy, z) + (o.steelBack ? bzBlock(o.Br, o.a, o.b, Leff, dx, dy, z2) : 0));
+          }
+          return s;
+        };
+      }
       c += o.sigma * (o.t / 2) * layerPower(bzAt, o.width, Lx, h);
     }
     return c;
@@ -210,5 +244,5 @@
     return out;
   }
 
-  global.DoorEddy = { damping, selfTest, fieldTable };
+  global.DoorEddy = { damping, selfTest, fieldTable, bzBlock };
 })(typeof window !== 'undefined' ? window : globalThis);

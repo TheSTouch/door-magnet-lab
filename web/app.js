@@ -17,37 +17,51 @@
     { id: 'door.wheelMass', label: 'Wheel inertia, as extra mass', unit: 'kg', v: 0.2, min: 0, max: 2, step: 0.05, si: 1 },
 
     { g: 'Rubber bumper (on each stopper)' },
-    { id: 'bumper.len', label: 'Bumper protrusion', unit: 'mm', v: 12, min: 3, max: 40, step: 1, si: 1, help: 'Only used for the drawing.' },
+    { id: 'bumper.len', label: 'Bumper length', unit: 'mm', v: 15, min: 3, max: 40, step: 1, si: 1, measured: true, help: 'Owner: 15 mm long, Ø25 mm, screw in the middle. Used for the drawing.' },
+    { id: 'bumper.dia', label: 'Bumper diameter', unit: 'mm', v: 25, min: 8, max: 50, step: 1, si: 1, measured: true },
     { id: 'bumper.f2mm', label: 'Force to squash it by 2 mm', unit: 'N', v: 400, min: 50, max: 3000, step: 10, si: 1 },
     { id: 'bumper.restitution', label: 'Bounce (restitution)', unit: '', v: 0.5, min: 0.05, max: 0.95, step: 0.05, si: 1, help: '0 = dead stop, 1 = perfect bounce. Hard rubber 0.5–0.7, soft foam or sorbothane 0.1–0.3.' },
 
-    { g: 'Latch magnets (in the box on the stopper)', note: 'Magnets face down through the printed skin onto the steel plate on top of the door.' },
-    { id: 'latch.count', type: 'select', label: 'Magnets', v: 2, options: [[0, 'None'], [1, '1, in the centre'], [2, '2, one each side'], [3, '3 in a row']] },
+    { g: 'Latch magnets', note: 'Either in the rubber bumper, pulling the steel hanger strap, or in a printed box under the stopper, over the steel plate on the door.' },
+    { id: 'latch.type', type: 'select', label: 'Where', v: 'bumper', options: [['bumper', 'In the bumper, on the hanger strap'], ['plate', 'Box under the stopper, over the door plate']] },
+    { id: 'latch.count', type: 'select', label: 'Magnets', v: 1, options: [[0, 'None'], [1, '1'], [2, '2'], [3, '3']] },
+    { id: 'latch.mount', type: 'select', label: 'Magnet mounting', v: 'fixed', help: 'Owner\'s plan: magnet glued on the bumper screw head, so it is fixed. Embedded = on a soft pad that lets it move back.', options: [['fixed', 'Fixed (glued on the screw head)'], ['embedded', 'Floating (on a soft pad, moves with the rubber)']], show: (V) => V['latch.type'] === 'bumper' },
+    { id: 'latch.recess', label: 'Magnet face behind the bumper face', unit: 'mm', v: 4, min: 0, max: 10, step: 0.1, si: 1e-3, help: 'Rubber left in front of the magnet. 0 = flush. If the rubber squashes more than this, the magnet itself hits the steel (brittle: it can chip).', show: (V) => V['latch.type'] === 'bumper' },
+    { id: 'latch.hangerMag', type: 'check', label: 'Second magnet on the hanger, facing it (opposite pole)', v: false, show: (V) => V['latch.type'] === 'bumper' },
+    { id: 'latch.hangerProtrude', label: 'Hanger magnet sticks out from the strap', unit: 'mm', v: 5, min: 0, max: 15, step: 0.5, si: 1e-3, help: 'With a fixed bumper magnet, the hanger magnet goes into the hole in the bumper: the bumper magnet must sit deeper than this plus the squash.', show: (V) => V['latch.type'] === 'bumper' && V['latch.hangerMag'] && V['latch.mount'] === 'fixed' },
+    { id: 'latch.strapT', label: 'Hanger strap thickness (steel)', unit: 'mm', v: 5, min: 1, max: 12, step: 0.5, si: 1e-3, measured: true, help: 'Owner: 5 mm.', show: (V) => V['latch.type'] === 'bumper' },
     { id: 'latch.D', label: 'Magnet diameter', unit: 'mm', v: 15, min: 5, max: 40, step: 1, si: 1e-3 },
     { id: 'latch.L', label: 'Magnet thickness', unit: 'mm', v: 5, min: 1, max: 20, step: 0.5, si: 1e-3 },
-    { id: 'latch.grade', type: 'select', label: 'Grade', v: 'N42', options: Object.keys(PH.GRADES).map((k) => [k, k]) },
+    { id: 'latch.grade', type: 'select', label: 'Grade', v: 'N35', help: 'Owner: cheap magnets, so assumed N35. A luggage-scale pull test beats this guess.', options: Object.keys(PH.GRADES).map((k) => [k, k]) },
     { id: 'latch.pullOverride', label: 'Datasheet pull (0 = estimate)', unit: 'N', v: 0, min: 0, max: 500, step: 1, si: 1, help: 'The seller\'s adhesive force on thick steel, kg × 9.81.' },
-    { id: 'latch.spacing', label: 'Centre-to-centre spacing', unit: 'mm', v: 15.1, min: 5, max: 60, step: 0.1, si: 1e-3 },
-    { id: 'latch.skin', label: 'Printed skin under the magnet', unit: 'mm', v: 0.4, min: 0, max: 3, step: 0.1, si: 1e-3 },
-    { id: 'latch.airGap', label: 'Air gap, box underside to plate', unit: 'mm', v: 2, min: 0.2, max: 15, step: 0.1, si: 1e-3, help: 'Not measured yet.' },
-    { id: 'latch.plateT', label: 'Door plate thickness (steel)', unit: 'mm', v: 4, min: 0.5, max: 10, step: 0.5, si: 1e-3, help: 'Not measured yet. Check it is steel: a magnet sticks.' },
-    { id: 'latch.edgeAtContact', label: 'Plate end past the box centre, door closed', unit: 'mm', v: 10, min: -30, max: 40, step: 0.5, si: 1e-3, help: 'With the hanger touching the bumper: how far the end of the door plate reaches under the box, from the box centre. Negative = it stops before the centre.' },
-    { id: 'latch.plateLen', label: 'Plate length', unit: 'mm', v: 120, min: 30, max: 400, step: 5, si: 1e-3 },
+    { id: 'latch.spacing', label: 'Centre-to-centre spacing', unit: 'mm', v: 15.1, min: 5, max: 60, step: 0.1, si: 1e-3 , show: (V) => V['latch.type'] === 'plate' },
+    { id: 'latch.skin', label: 'Printed skin under the magnet', unit: 'mm', v: 0.4, min: 0, max: 3, step: 0.1, si: 1e-3 , show: (V) => V['latch.type'] === 'plate' },
+    { id: 'latch.airGap', label: 'Air gap, box underside to plate', unit: 'mm', v: 1, min: 0.2, max: 15, step: 0.1, si: 1e-3, measured: true, help: 'Owner: stopper underside to door top 10 mm, minus the 5 mm plate, minus the 4 mm box floor = 1 mm.' , show: (V) => V['latch.type'] === 'plate' },
+    { id: 'latch.plateT', label: 'Door plate thickness (steel)', unit: 'mm', v: 5, min: 0.5, max: 10, step: 0.5, si: 1e-3, measured: true, help: 'Owner: 5 mm.' , show: (V) => V['latch.type'] === 'plate' },
+    { id: 'latch.edgeAtContact', label: 'Plate end past the box centre, door closed', unit: 'mm', v: 10, min: -30, max: 40, step: 0.5, si: 1e-3, help: 'With the hanger touching the bumper: how far the end of the door plate reaches under the box, from the box centre. Negative = it stops before the centre.' , show: (V) => V['latch.type'] === 'plate' },
+    { id: 'latch.plateLen', label: 'Plate length', unit: 'mm', v: 120, min: 30, max: 400, step: 5, si: 1e-3 , show: (V) => V['latch.type'] === 'plate' },
     { id: 'latch.bothEnds', type: 'check', label: 'Same kit on the open-side stopper', v: true },
 
     { g: 'Eddy-current brake', note: 'A copper or aluminium sheet moving past magnets is slowed in proportion to its speed, without contact.' },
-    { id: 'brake.mode', type: 'select', label: 'Brake', v: 'off', options: [['off', 'Off'], ['stopper', 'Sheet on the door plate, under the latch magnets'], ['hanger', 'Magnets on the hanger, strip on the rail']] },
+    { id: 'brake.mode', type: 'select', label: 'Brake', v: 'hanger', options: [['off', 'Off'], ['stopper', 'Sheet on the door plate, under the latch magnets'], ['hanger', 'Magnets on the hanger, strip on the rail']] },
     { id: 'brake.conductor', type: 'select', label: 'Sheet', v: 'copper', options: Object.entries(PH.CONDUCTORS).map(([k, c]) => [k, c.label]), show: (V) => V['brake.mode'] !== 'off' },
     { id: 'brake.t', label: 'Sheet thickness', unit: 'mm', v: 2, min: 0.5, max: 10, step: 0.5, si: 1e-3, show: (V) => V['brake.mode'] !== 'off' },
-    { id: 'brake.width', label: 'Strip width', unit: 'mm', v: 30, min: 5, max: 80, step: 1, si: 1e-3, help: 'Centred on the magnets. The rail face is 40 mm high.', show: (V) => V['brake.mode'] !== 'off' },
+    { id: 'brake.width', label: 'Strip width', unit: 'mm', v: 20, min: 5, max: 80, step: 1, si: 1e-3, help: 'Centred on the magnets. The rail face is 40 mm high.', show: (V) => V['brake.mode'] !== 'off' },
     { id: 'brake.alternate', type: 'check', label: 'Alternate N / S along the row', v: true, show: (V) => V['brake.mode'] !== 'off' },
     { id: 'brake.stripLen', label: 'Sheet length from the plate end', unit: 'mm', v: 30, min: 5, max: 200, step: 5, si: 1e-3, show: (V) => V['brake.mode'] === 'stopper' },
-    { id: 'brake.count', label: 'Magnets on each hanger', unit: '', v: 8, min: 1, max: 30, step: 1, si: 1, show: (V) => V['brake.mode'] === 'hanger' },
-    { id: 'brake.D', label: 'Brake magnet diameter', unit: 'mm', v: 15, min: 5, max: 60, step: 1, si: 1e-3, show: (V) => V['brake.mode'] === 'hanger' },
-    { id: 'brake.L', label: 'Brake magnet thickness', unit: 'mm', v: 5, min: 1, max: 30, step: 0.5, si: 1e-3, show: (V) => V['brake.mode'] === 'hanger' },
-    { id: 'brake.pitch', label: 'Magnet spacing, centre to centre', unit: 'mm', v: 16, min: 5, max: 60, step: 0.5, si: 1e-3, show: (V) => V['brake.mode'] === 'hanger' },
-    { id: 'brake.grade', type: 'select', label: 'Brake magnet grade', v: 'N42', options: Object.keys(PH.GRADES).map((k) => [k, k]), show: (V) => V['brake.mode'] === 'hanger' },
-    { id: 'brake.gap', label: 'Gap, magnet to strip', unit: 'mm', v: 3, min: 0.3, max: 10, step: 0.1, si: 1e-3, show: (V) => V['brake.mode'] === 'hanger' },
+    { id: 'brake.mount', type: 'select', label: 'How the brake magnets are held', v: 'holder', options: [['holder', 'Printed holder (gap as set below)'], ['strap', 'Snapped straight onto the steel strap']], help: 'Snapped on: steel behind the magnets (stronger field), but the gap is what is left of the strap-to-rail space.', show: (V) => V['brake.mode'] === 'hanger' },
+    { id: 'brake.space', label: 'Space, back of strap to rail face', unit: 'mm', v: 15, min: 5, max: 40, step: 0.5, si: 1e-3, measured: true, help: 'Owner: 15 mm (a little less usable).', show: (V) => V['brake.mode'] === 'hanger' && V['brake.mount'] === 'strap' },
+    { id: 'brake.shape', type: 'select', label: 'Magnet shape', v: 'disc', options: [['disc', 'Round (disc)'], ['block', 'Rectangular (block)']], show: (V) => V['brake.mode'] === 'hanger' },
+    { id: 'brake.D', label: 'Diameter', unit: 'mm', v: 15, min: 5, max: 60, step: 1, si: 1e-3, show: (V) => V['brake.mode'] === 'hanger' && V['brake.shape'] === 'disc' },
+    { id: 'brake.a', label: 'Block length, along the rail', unit: 'mm', v: 30, min: 5, max: 80, step: 1, si: 1e-3, help: 'The strap is 30 mm wide.', show: (V) => V['brake.mode'] === 'hanger' && V['brake.shape'] === 'block' },
+    { id: 'brake.b', label: 'Block height, up the rail face', unit: 'mm', v: 30, min: 5, max: 60, step: 1, si: 1e-3, help: 'The rail face is 40 mm tall.', show: (V) => V['brake.mode'] === 'hanger' && V['brake.shape'] === 'block' },
+    { id: 'brake.L', label: 'Magnet thickness (towards the rail)', unit: 'mm', v: 5, min: 1, max: 30, step: 0.5, si: 1e-3, help: 'Stack two to double it.', show: (V) => V['brake.mode'] === 'hanger' },
+    { id: 'brake.count', label: 'Magnets along the rail', unit: '', v: 8, min: 1, max: 30, step: 1, si: 1, show: (V) => V['brake.mode'] === 'hanger' },
+    { id: 'brake.rows', label: 'Rows (up the rail face)', unit: '', v: 1, min: 1, max: 4, step: 1, si: 1, show: (V) => V['brake.mode'] === 'hanger' },
+    { id: 'brake.pitch', label: 'Spacing along the rail, centre to centre', unit: 'mm', v: 16, min: 5, max: 80, step: 0.5, si: 1e-3, show: (V) => V['brake.mode'] === 'hanger' },
+    { id: 'brake.rowPitch', label: 'Spacing between rows', unit: 'mm', v: 16, min: 5, max: 60, step: 0.5, si: 1e-3, show: (V) => V['brake.mode'] === 'hanger' && +V['brake.rows'] > 1 },
+    { id: 'brake.grade', type: 'select', label: 'Brake magnet grade', v: 'N35', options: Object.keys(PH.GRADES).map((k) => [k, k]), show: (V) => V['brake.mode'] === 'hanger' },
+    { id: 'brake.gap', label: 'Gap, magnet to strip', unit: 'mm', v: 3, min: 0.3, max: 13, step: 0.1, si: 1e-3, help: 'Owner: 15 mm between the back of the hanger strap and the rail face (a little less usable). 15 − 2 mm strip − this gap = holder thickness.', show: (V) => V['brake.mode'] === 'hanger' && V['brake.mount'] !== 'strap' },
     { id: 'brake.zoneLen', label: 'Strip length from each stop', unit: 'mm', v: 250, min: 20, max: 600, step: 10, si: 1e-3, show: (V) => V['brake.mode'] === 'hanger' },
     { id: 'brake.zoneStart', label: 'Strip stops short of the stop by', unit: 'mm', v: 0, min: 0, max: 200, step: 5, si: 1e-3, help: 'A gap lets a strongly braked door coast the last bit into the latch instead of creeping to a halt.', show: (V) => V['brake.mode'] === 'hanger' },
     { id: 'brake.flangeMu', label: 'Friction from the side pull', unit: '', v: 0.05, min: 0, max: 0.3, step: 0.01, si: 1, help: 'The magnets pull the hanger towards the steel rail and the wheels rub. 0.02 with a guide roller, 0.15 if something slides.', show: (V) => V['brake.mode'] === 'hanger' },
@@ -181,7 +195,7 @@
     const el = $('#opt-table');
     const start = Math.min(P.test.start, model.travel);
     const where = b.mode === 'hanger'
-      ? `${b.count} × Ø${f1(b.D * 1e3)} × ${f1(b.L * 1e3)} mm ${b.grade} on the hanger, ${f1(b.pitch * 1e3)} mm apart, ${b.alternate ? 'alternating N/S' : 'all the same way'}, ${f1(b.gap * 1e3)} mm from the strip, steel rail behind, ${f1(b.zoneLen * 1e3)} mm of strip at each end`
+      ? `${b.rows > 1 ? b.rows + ' rows of ' : ''}${b.count} × ${b.shape === 'block' ? f1(b.a * 1e3) + '×' + f1(b.b * 1e3) : 'Ø' + f1(b.D * 1e3)} × ${f1(b.L * 1e3)} mm ${b.grade} ${b.mount === 'strap' ? 'snapped on the strap' : 'in a holder'}, ${b.alternate ? 'alternating N/S' : 'all the same way'}, ${f1((model.brake ? model.brake.gap : b.gap) * 1e3)} mm from the strip, steel rail behind, ${f1(b.zoneLen * 1e3)} mm of strip at each end`
       : `the ${P.latch.count} latch magnet(s) over a sheet on the steel door plate, ${f1(b.stripLen * 1e3)} mm long`;
     $('#opt-hint').textContent = `For ${where}. Speed at the bumper for a ${P.test.speed} m/s push from ${f1(start * 1e3)} mm, ✓ = ends latched. c = damping in N·s/m. Eddy braking only: the friction from the magnets' pull on the rail ("pull", in newtons) is left out here because its coefficient is a guess.`;
     let html = '<table><thead><tr><th>Strip</th>' + OPT_WIDTHS.map((w) => `<th>${w} mm wide</th>`).join('') + '</tr></thead><tbody>';
@@ -236,12 +250,18 @@
     const L = model.latch;
     if (!L) return 0;
     const rest = PH.restPosition(model);
-    return L.U0 * (L.overlap(rest) - L.overlap(L.reach + 0.002));
+    return L.energy(L.reach + 0.002) - L.energy(rest);
   }
   function updateDerived() {
     const L = model.latch, B = model.brake;
     const dl = $('#derived-latch'), db = $('#derived-brake');
-    if (L) {
+    if (L && L.type === 'bumper') {
+      const rest = PH.restPosition(model);
+      const gRest = Math.max(L.gapAt(rest), 0);
+      dl.innerHTML = `Each magnet: <b>${f1(L.mag.contact)} N</b> on contact (${P.latch.pullOverride ? 'datasheet' : 'estimate'}),
+        <b>${f1(L.pullAt(gRest))} N</b> at rest (${f1(gRest * 1e3)} mm from the ${P.latch.hangerMag ? 'hanger magnet' : 'strap'}).<br>
+        Latch energy ${(latchWell() * 1000).toFixed(0)} mJ, reach ${f1(L.reach * 1e3)} mm from the bumper.`;
+    } else if (L) {
       const hangerLoad = (P.door.mass * PH.G) / 2;
       dl.innerHTML = `Each magnet: <b>${f1(L.mag.contact)} N</b> on contact (${P.latch.pullOverride ? 'datasheet' : 'estimate'}),
         <b>${f1(L.mag.pull(L.gap))} N</b> across the ${f1(L.gap * 1e3)} mm gap.<br>
@@ -253,7 +273,8 @@
       const need = neededDamping();
       db.innerHTML = `Damping <b>${f1(B.cTotal)} N·s/m</b> at each end (${f1(B.cPer)} per magnet), from the eddy-current solution on the ${f1(P.brake.width * 1e3)} mm strip.<br>
         To slow a ${P.test.speed} m/s push to 0.3 m/s over this zone you need about <b>${f1(need)} N·s/m</b>.` +
-        (B.sideLoad ? `<br>The brake magnets pull the hanger onto the steel rail with about <b>${f1(B.sideLoad)} N</b>.` : '');
+        (P.brake.mode === 'hanger' ? `<br>Magnet face to copper: <b>${f1(B.gap * 1e3)} mm</b>. Magnet group ${f1(B.rowLen * 1e3)} × ${f1(B.height * 1e3)} mm.` : '') +
+        (B.sideLoad ? `<br>The brake magnets pull the hanger onto the steel rail with about <b>${f1(B.sideLoad)} N</b>, all along the travel (the whole rail is steel).` : '');
     } else db.textContent = 'Brake off.';
   }
   function zoneLength() {
@@ -324,6 +345,11 @@
       html += card('Outcome', `${c.ok ? '✓' : '✗'} ${c.outcome}`, c.ok ? 'The door ends at rest, held by the magnet.' : `Ends ${f1(c.dist * 1e3)} mm from the stop.`, 'wide ' + (c.ok ? 'ok' : 'bad'));
       html += card('Speed when it hits the bumper', c.contact ? `${c.impact.toFixed(2)} m/s` : '–', c.contact ? `${f1(0.5 * model.m * c.impact ** 2)} J of energy at impact` : 'It never reached the bumper.');
       html += card('Peak bumper force', `${f1(r.ev.peakBumper)} N`, 'Load on the stopper clamp, the bumper and the hanger.');
+      if (model.latch && model.latch.type === 'bumper') {
+        const minP = Math.min(...r.rec.p.map((p) => (i.kind === 'open' ? model.travel - p : p)));
+        const hit = model.latch.magnetHits(minP);
+        html += card('Magnet vs steel', hit ? '✗ the magnet is hit' : '✓ never touches', hit ? 'The rubber squashed past the magnet face: the strap strikes the magnet. Neodymium chips.' : `Closest gap ${f1(Math.max(model.latch.gapAt(minP), 0) * 1e3)} mm.`, hit ? 'bad' : 'ok');
+      }
       const reb = r.ev.maxAfterFirstClosed;
       if (i.kind === 'close') html += card('Rebound after first hit', reb ? `${f1(reb * 1e3)} mm` : '–', 'Furthest it bounced back out.');
       html += card('Pull needed to open it', `${f1(stat.force)} N`, `≈ ${(stat.force / PH.G).toFixed(2)} kg. Pull at rest ${f1(preload)} N.`);
@@ -409,7 +435,7 @@
     const to = L ? L.reach + 0.008 : 0.04;
     const pts = model.staticMap(-0.0015, to, 300);
     const series = [{ name: 'Latch total', color: '--series-1', data: pts.map((d) => [d.p * 1000, d.latch]) }];
-    if (L && L.offsets.length === 2) {
+    if (L && L.type === 'plate' && L.offsets.length === 2) {
       L.offsets.forEach((o, k) => {
         const f = (p) => { const s = o + L.cfg.edgeAtContact - p; return L.U0 * (-L.edge.dC(s) + L.edge.dC(s - L.cfg.plateLen)); };
         series.push({ name: k === 0 ? 'Magnet deeper in the stopper' : 'Magnet nearer the door', color: k === 0 ? '--series-2' : '--series-3',
@@ -426,6 +452,7 @@
   function geo() {
     const g = { ...GEO };
     g.bl = P.bumper.len;
+    g.bumperD = P.bumper.dia;
     g.xb = -g.bl - g.stopW / 2;
     g.e0 = P.latch.edgeAtContact * 1000;
     g.plateT = P.latch.plateT * 1000;
@@ -469,7 +496,13 @@
     // bumper (squashes when dist < 0)
     const end = Math.min(0, dist);
     rect(g, M, -G.bl, end, G.bumperY - G.bumperD / 2, G.bumperY + G.bumperD / 2, C.rubber, C.steel2, 2);
-    if (withLatch && model.latch) {
+    if (withLatch && model.latch && model.latch.type === 'bumper') {
+      const L = model.latch, R = L.mag.R * 1000, T = L.cfg.L * 1000, rec = P.latch.recess * 1000;
+      const face = Math.min(0, dist);   // bumper face moves when squashed
+      const x1 = P.latch.mount === 'fixed' ? -rec : face - rec, x0 = x1 - T;   // embedded magnets move with the rubber face
+      void face;
+      rect(g, M, x0, x1, G.bumperY - Math.min(R, G.bumperD / 2 - 1), G.bumperY + Math.min(R, G.bumperD / 2 - 1), C.mag, null, 0.5);
+    } else if (withLatch && model.latch) {
       const L = model.latch;
       const bx0 = G.xb - G.boxW / 2, bx1 = G.xb + G.boxW / 2, yb = G.boxBottom;
       g.globalAlpha = 0.92;
@@ -499,8 +532,12 @@
     rect(g, M, dist, dist + G.strapW, G.doorTop - 300, G.wheelR, C.steel, C.steel2, 4);
     circle(g, M, dist + G.strapW / 2, G.wheelR, G.wheelR, C.steel, C.steel2);
     circle(g, M, dist + G.strapW / 2, G.wheelR, 9, C.steel2);
+    if (model.latch && model.latch.type === 'bumper' && P.latch.hangerMag) {
+      const R = model.latch.mag.R * 1000, T = model.latch.cfg.L * 1000;
+      rect(g, M, dist - T, dist, G.bumperY - R, G.bumperY + R, C.mag, null, 0.5);   // latch magnet on the strap, facing the bumper
+    }
     if (model.brake && P.brake.mode === 'hanger') {
-      const n = Math.min(P.brake.count, 6), d = P.brake.D * 1000;
+      const n = Math.min(P.brake.count, 6), d = (P.brake.shape === 'block' ? P.brake.b : P.brake.D) * 1000;
       for (let k = 0; k < n; k++) rect(g, M, dist + 4 + (k * (G.strapW - 8)) / Math.max(n, 1), dist + 4 + ((k + 1) * (G.strapW - 8)) / Math.max(n, 1) - 1, -20 - d / 4, -20 + d / 4, C.mag);
     }
   }
@@ -564,7 +601,7 @@
     // annotations
     const text = css('--text'), muted = css('--text-2'), arrow = css('--arrow');
     g.font = '12px system-ui, sans-serif';
-    if (model.latch && (!nearOpen || model.both)) {
+    if (model.latch && model.latch.type === 'plate' && (!nearOpen || model.both)) {
       const yGap0 = G.plateTop + G.sheet, yGap1 = G.boxBottom + P.latch.skin * 1000;
       const xg = G.xb + G.boxW / 2 + 6;
       g.strokeStyle = muted; g.lineWidth = 1;
@@ -630,15 +667,12 @@
 
   // ---------------------------------------------------------------- questions
   const QUESTIONS = [
-    ['Plate end under the box', 'latch.edgeAtContact', 'Door closed, hanger on the bumper: how far does the end of the steel plate on top of the door reach past the middle of where the box sits?'],
-    ['Gap under the stopper', 'latch.airGap', 'Vertical gap between the underside of the stopper lobe and the plate on the door. The box floor must fit in it, so this decides the box and the magnet gap.'],
-    ['Plate thickness', 'latch.plateT', 'Thickness of the steel plate on top of the door (check a magnet sticks to it).'],
-    ['Stopper lobe size', null, 'Length along the rail, depth from the wall and height below the rail of the stopper part the box slips over. The v1 box (40 × 23 × 25 mm) does not fit yet.'],
-    ['Travel', 'door.travel', 'How far the door slides from bumper to bumper.'],
-    ['Rolling friction', 'door.crr', 'Pull the door slowly with a luggage scale and note the steady reading.'],
-    ['Rail level', 'door.slope', 'Does the door drift on its own when let go half-open? Which way?'],
-    ['Bumper', 'bumper.restitution', 'Drop the door gently against the bumper: does it bounce back far? Is the rubber hard or soft?'],
-    ['Magnets you have', 'latch.D', 'Exact size and grade of the magnets (the box was made for Ø15 × 5 mm).'],
+    ['Bumper screw', null, 'The Ø25 × 15 mm bumper has a screw in the middle: is it a threaded stud moulded into the rubber, or a screw through it with the head on the door side?'],
+    ['Usable space behind the strap', 'brake.gap', 'Owner: 15 mm strap to rail, "a little less available". What takes the rest (bolt caps on the rail face? how high?)'],
+    ['Travel', 'door.travel', 'How far the door slides from bumper to bumper (tape measure, hanger to hanger travel).'],
+    ['Rolling friction', 'door.crr', 'Pull the door slowly with a luggage scale and note the steady reading. Without a scale: set it rolling and see if it keeps going on its own.'],
+    ['Bumper', 'bumper.restitution', 'Push the door gently into the stop from about 20 cm: does it bounce back a few cm, or stay?'],
+    ['Magnet grade', 'latch.grade', 'Unknown. Hang the door-plate steel (or any thick steel) from one magnet with a luggage scale and note the pull: enter it as the datasheet pull.'],
   ];
   function updateQuestions() {
     $('#questions').innerHTML = QUESTIONS.map(([title, id, d]) => {
@@ -661,6 +695,10 @@
     });
     $('#scrub').addEventListener('input', (e) => { playT = +e.target.value / 1000; playing = false; $('#btn-play').textContent = '▶'; drawFrame(); });
     $('#btn-reset').addEventListener('click', () => { V = { ...DEFAULTS }; save(); buildPanel(); rebuild(); });
+    // The setup that works in the model: a dead bumper (bounce 0.2) and the magnet on a
+    // sponge pad 1 mm behind the rubber face, plus the rail brake.
+    const RECOMMENDED = { 'bumper.restitution': 0.2, 'latch.type': 'bumper', 'latch.mount': 'embedded', 'latch.recess': 1, 'latch.hangerMag': true, 'brake.mode': 'hanger' };
+    $('#btn-recommended').addEventListener('click', () => { V = { ...DEFAULTS, ...RECOMMENDED }; save(); buildPanel(); rebuild(); });
     $('#btn-theme').addEventListener('click', () => {
       const root = document.documentElement;
       const dark = root.dataset.theme ? root.dataset.theme === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches;

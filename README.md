@@ -82,6 +82,41 @@ page.
   strip cannot both stop hard pushes and let gentle ones through; gentle closes
   need something that keeps pulling the door in (slope, spring, long-reach magnet).
 
+## Latch: magnet in the bumper (2026-11-22)
+
+A Ø15 × 5 mm magnet (cheap, assumed N35) moulded into the rubber bumper, 1 mm of
+rubber in front, pulling the steel hanger strap straight in:
+
+- It takes about **29 N (3 kg)** to pull the door open, against 6.7 N for the box
+  over the door plate (2 magnets, 1.4 mm gap).
+- The magnet must move back with the rubber when it squashes. Fixed 1 mm behind the
+  face, the strap strikes it on 7 of 8 test pushes. Fixed far enough back to be safe
+  (6 mm), it holds only 5.6 N.
+- Catching is set by the latch's energy against the bumper's bounce, not by the
+  holding force, so the fastest close it catches is the same as for the box:
+  0.3 m/s with the current bumper, 0.3–1.0 m/s with a dead bumper (bounce 0.2) and
+  the rail brake.
+- No box under the stopper is needed, so the 1 mm clearance over the plate stops
+  being a problem.
+
+## Latch with a second magnet on the hanger, and hanger brake layouts (2026-11-22)
+
+- Two identical magnets facing each other pull like one magnet on steel at half the
+  gap (steel acts as a mirror). A Ø15 × 5 magnet on the hanger facing the bumper
+  magnet doubles the latch's reach to about 35 mm and holds with about 35 N. With a
+  dead bumper (bounce 0.2) the door closes and holds from 0.3 to 1.2 m/s.
+- The bumper magnet must not be struck: either floating on sponge under a 1 mm skin
+  (a glued TPU cap works) or set deeper than the hanger magnet's protrusion plus the
+  rubber squash.
+- Brake magnets snapped straight onto the strap must be 10 mm thick, otherwise they
+  sit 8 mm from the copper and barely brake. A 30 × 30 × 10 N42 block brakes best
+  of what fits the 30 mm strap (7.7 N·s/m on a 30 mm strip). It also pulls the
+  hanger towards the steel rail with about 169 N all along the travel. The row of
+  8 × Ø15 × 5 in a holder gives the best braking per newton of side pull
+  (5.2 N·s/m for 57 N).
+- Two rows only help when the copper covers the full 40 mm rail face (+35 %).
+  Alternating up the rail adds nothing; only alternation along the rail does.
+
 ## License
 
 [MIT](LICENSE). Contributions and corrections to the physics are welcome; open an
@@ -93,3 +128,4 @@ issue or a pull request.
 |------|--------|
 | 2026-11-21 | Photos reviewed; simulator v1 with latch, bumper, eddy brake, three tests, speed sweep |
 | 2026-11-21 | Published as open source (MIT) |
+| 2026-11-22 | Eddy solver on the real strip width; magnet-in-bumper latch, hanger magnet, block magnets, rows, snap-on mounting |
