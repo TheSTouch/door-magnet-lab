@@ -25,9 +25,9 @@
     { g: 'Latch magnets', note: 'Either in the rubber bumper, pulling the steel hanger strap, or in a printed box under the stopper, over the steel plate on the door.' },
     { id: 'latch.type', type: 'select', label: 'Where', v: 'bumper', options: [['bumper', 'In the bumper, on the hanger strap'], ['plate', 'Box under the stopper, over the door plate']] },
     { id: 'latch.count', type: 'select', label: 'Magnets', v: 1, options: [[0, 'None'], [1, '1'], [2, '2'], [3, '3']] },
-    { id: 'latch.mount', type: 'select', label: 'Magnet mounting', v: 'fixed', help: 'Owner\'s plan: magnet glued on the bumper screw head, so it is fixed. Embedded = on a soft pad that lets it move back.', options: [['fixed', 'Fixed (glued on the screw head)'], ['embedded', 'Floating (on a soft pad, moves with the rubber)']], show: (V) => V['latch.type'] === 'bumper' },
-    { id: 'latch.recess', label: 'Magnet face behind the bumper face', unit: 'mm', v: 4, min: 0, max: 10, step: 0.1, si: 1e-3, help: 'Rubber left in front of the magnet. 0 = flush. If the rubber squashes more than this, the magnet itself hits the steel (brittle: it can chip).', show: (V) => V['latch.type'] === 'bumper' },
-    { id: 'latch.hangerMag', type: 'check', label: 'Second magnet on the hanger, facing it (opposite pole)', v: false, show: (V) => V['latch.type'] === 'bumper' },
+    { id: 'latch.mount', type: 'select', label: 'Magnet mounting', v: 'embedded', help: 'Owner\'s plan: magnet glued on the bumper screw head, so it is fixed. Embedded = on a soft pad that lets it move back.', options: [['fixed', 'Fixed (glued on the screw head)'], ['embedded', 'Floating (on a soft pad, moves with the rubber)']], show: (V) => V['latch.type'] === 'bumper' },
+    { id: 'latch.recess', label: 'Magnet face behind the bumper face', unit: 'mm', v: 1, min: 0, max: 10, step: 0.1, si: 1e-3, help: 'Rubber left in front of the magnet. 0 = flush. If the rubber squashes more than this, the magnet itself hits the steel (brittle: it can chip).', show: (V) => V['latch.type'] === 'bumper' },
+    { id: 'latch.hangerMag', type: 'check', label: 'Second magnet on the hanger, facing it (opposite pole)', v: true, show: (V) => V['latch.type'] === 'bumper' },
     { id: 'latch.hangerProtrude', label: 'Hanger magnet sticks out from the strap', unit: 'mm', v: 5, min: 0, max: 15, step: 0.5, si: 1e-3, help: 'With a fixed bumper magnet, the hanger magnet goes into the hole in the bumper: the bumper magnet must sit deeper than this plus the squash.', show: (V) => V['latch.type'] === 'bumper' && V['latch.hangerMag'] && V['latch.mount'] === 'fixed' },
     { id: 'latch.strapT', label: 'Hanger strap thickness (steel)', unit: 'mm', v: 5, min: 1, max: 12, step: 0.5, si: 1e-3, measured: true, help: 'Owner: 5 mm.', show: (V) => V['latch.type'] === 'bumper' },
     { id: 'latch.D', label: 'Magnet diameter', unit: 'mm', v: 15, min: 5, max: 40, step: 1, si: 1e-3 },
@@ -46,25 +46,34 @@
     { id: 'brake.mode', type: 'select', label: 'Brake', v: 'hanger', options: [['off', 'Off'], ['stopper', 'Sheet on the door plate, under the latch magnets'], ['hanger', 'Magnets on the hanger, strip on the rail']] },
     { id: 'brake.conductor', type: 'select', label: 'Sheet', v: 'copper', options: Object.entries(PH.CONDUCTORS).map(([k, c]) => [k, c.label]), show: (V) => V['brake.mode'] !== 'off' },
     { id: 'brake.t', label: 'Sheet thickness', unit: 'mm', v: 2, min: 0.5, max: 10, step: 0.5, si: 1e-3, show: (V) => V['brake.mode'] !== 'off' },
-    { id: 'brake.width', label: 'Strip width', unit: 'mm', v: 20, min: 5, max: 80, step: 1, si: 1e-3, help: 'Centred on the magnets. The rail face is 40 mm high.', show: (V) => V['brake.mode'] !== 'off' },
+    { id: 'brake.width', label: 'Strip width', unit: 'mm', v: 40, min: 5, max: 80, step: 1, si: 1e-3, help: 'Centred on the magnets. The rail face is 40 mm high.', show: (V) => V['brake.mode'] !== 'off' },
     { id: 'brake.alternate', type: 'check', label: 'Alternate N / S along the row', v: true, show: (V) => V['brake.mode'] !== 'off' },
     { id: 'brake.stripLen', label: 'Sheet length from the plate end', unit: 'mm', v: 30, min: 5, max: 200, step: 5, si: 1e-3, show: (V) => V['brake.mode'] === 'stopper' },
-    { id: 'brake.mount', type: 'select', label: 'How the brake magnets are held', v: 'holder', options: [['holder', 'Printed holder (gap as set below)'], ['strap', 'Snapped straight onto the steel strap']], help: 'Snapped on: steel behind the magnets (stronger field), but the gap is what is left of the strap-to-rail space.', show: (V) => V['brake.mode'] === 'hanger' },
+    { id: 'brake.sides', type: 'select', label: 'Sides of the rail', v: 2, options: [[2, 'Both sides (magnets front and back, copper on both faces)'], [1, 'Front only']], show: (V) => V['brake.mode'] === 'hanger' },
+    { id: 'brake.offset', label: 'Hanger off centre (towards one side)', unit: 'mm', v: 0.5, min: 0, max: 3, step: 0.1, si: 1e-3, help: 'Both sides: the pulls cancel only when centred. Off centre, the closer side wins. Set to how much the wheel can wobble on the rail.', show: (V) => V['brake.mode'] === 'hanger' && +V['brake.sides'] === 2 },
+    { id: 'brake.mount', type: 'select', label: 'How the brake magnets are held', v: 'strap', options: [['holder', 'Printed holder (gap as set below)'], ['strap', 'Snapped straight onto the steel strap']], help: 'Snapped on: steel behind the magnets (stronger field), but the gap is what is left of the strap-to-rail space.', show: (V) => V['brake.mode'] === 'hanger' },
     { id: 'brake.space', label: 'Space, back of strap to rail face', unit: 'mm', v: 15, min: 5, max: 40, step: 0.5, si: 1e-3, measured: true, help: 'Owner: 15 mm (a little less usable).', show: (V) => V['brake.mode'] === 'hanger' && V['brake.mount'] === 'strap' },
-    { id: 'brake.shape', type: 'select', label: 'Magnet shape', v: 'disc', options: [['disc', 'Round (disc)'], ['block', 'Rectangular (block)']], show: (V) => V['brake.mode'] === 'hanger' },
+    { id: 'brake.shape', type: 'select', label: 'Magnet shape', v: 'block', options: [['disc', 'Round (disc)'], ['block', 'Rectangular (block)']], show: (V) => V['brake.mode'] === 'hanger' },
     { id: 'brake.D', label: 'Diameter', unit: 'mm', v: 15, min: 5, max: 60, step: 1, si: 1e-3, show: (V) => V['brake.mode'] === 'hanger' && V['brake.shape'] === 'disc' },
     { id: 'brake.a', label: 'Block length, along the rail', unit: 'mm', v: 30, min: 5, max: 80, step: 1, si: 1e-3, help: 'The strap is 30 mm wide.', show: (V) => V['brake.mode'] === 'hanger' && V['brake.shape'] === 'block' },
-    { id: 'brake.b', label: 'Block height, up the rail face', unit: 'mm', v: 30, min: 5, max: 60, step: 1, si: 1e-3, help: 'The rail face is 40 mm tall.', show: (V) => V['brake.mode'] === 'hanger' && V['brake.shape'] === 'block' },
-    { id: 'brake.L', label: 'Magnet thickness (towards the rail)', unit: 'mm', v: 5, min: 1, max: 30, step: 0.5, si: 1e-3, help: 'Stack two to double it.', show: (V) => V['brake.mode'] === 'hanger' },
-    { id: 'brake.count', label: 'Magnets along the rail', unit: '', v: 8, min: 1, max: 30, step: 1, si: 1, show: (V) => V['brake.mode'] === 'hanger' },
+    { id: 'brake.b', label: 'Block height, up the rail face', unit: 'mm', v: 40, min: 5, max: 60, step: 1, si: 1e-3, help: 'The rail face is 40 mm tall.', show: (V) => V['brake.mode'] === 'hanger' && V['brake.shape'] === 'block' },
+    { id: 'brake.L', label: 'Magnet thickness (towards the rail)', unit: 'mm', v: 10, min: 1, max: 30, step: 0.5, si: 1e-3, help: 'Stack two to double it.', show: (V) => V['brake.mode'] === 'hanger' },
+    { id: 'brake.count', label: 'Magnets along the rail', unit: '', v: 1, min: 1, max: 30, step: 1, si: 1, show: (V) => V['brake.mode'] === 'hanger' },
     { id: 'brake.rows', label: 'Rows (up the rail face)', unit: '', v: 1, min: 1, max: 4, step: 1, si: 1, show: (V) => V['brake.mode'] === 'hanger' },
-    { id: 'brake.pitch', label: 'Spacing along the rail, centre to centre', unit: 'mm', v: 16, min: 5, max: 80, step: 0.5, si: 1e-3, show: (V) => V['brake.mode'] === 'hanger' },
+    { id: 'brake.pitch', label: 'Spacing along the rail, centre to centre', unit: 'mm', v: 30, min: 5, max: 80, step: 0.5, si: 1e-3, show: (V) => V['brake.mode'] === 'hanger' },
     { id: 'brake.rowPitch', label: 'Spacing between rows', unit: 'mm', v: 16, min: 5, max: 60, step: 0.5, si: 1e-3, show: (V) => V['brake.mode'] === 'hanger' && +V['brake.rows'] > 1 },
-    { id: 'brake.grade', type: 'select', label: 'Brake magnet grade', v: 'N35', options: Object.keys(PH.GRADES).map((k) => [k, k]), show: (V) => V['brake.mode'] === 'hanger' },
+    { id: 'brake.grade', type: 'select', label: 'Brake magnet grade', v: 'N42', options: Object.keys(PH.GRADES).map((k) => [k, k]), show: (V) => V['brake.mode'] === 'hanger' },
     { id: 'brake.gap', label: 'Gap, magnet to strip', unit: 'mm', v: 3, min: 0.3, max: 13, step: 0.1, si: 1e-3, help: 'Owner: 15 mm between the back of the hanger strap and the rail face (a little less usable). 15 − 2 mm strip − this gap = holder thickness.', show: (V) => V['brake.mode'] === 'hanger' && V['brake.mount'] !== 'strap' },
     { id: 'brake.zoneLen', label: 'Strip length from each stop', unit: 'mm', v: 250, min: 20, max: 600, step: 10, si: 1e-3, show: (V) => V['brake.mode'] === 'hanger' },
     { id: 'brake.zoneStart', label: 'Strip stops short of the stop by', unit: 'mm', v: 0, min: 0, max: 200, step: 5, si: 1e-3, help: 'A gap lets a strongly braked door coast the last bit into the latch instead of creeping to a halt.', show: (V) => V['brake.mode'] === 'hanger' },
     { id: 'brake.flangeMu', label: 'Friction from the side pull', unit: '', v: 0.05, min: 0, max: 0.3, step: 0.01, si: 1, help: 'The magnets pull the hanger towards the steel rail and the wheels rub. 0.02 with a guide roller, 0.15 if something slides.', show: (V) => V['brake.mode'] === 'hanger' },
+
+    { g: 'Pull-in spring (at each stop)', note: 'Catches the door near the stop and pulls it in while the brake holds the speed down. A constant-force spring (coiled steel tape) gives the same pull over a long distance.' },
+    { id: 'spring.on', type: 'check', label: 'Pull-in spring', v: true },
+    { id: 'spring.reach', label: 'Reach from the stop', unit: 'mm', v: 250, min: 10, max: 600, step: 10, si: 1e-3, help: 'Should cover the copper strip: a gentle close that the brake stops before the spring catches it stays open.', show: (V) => V['spring.on'] },
+    { id: 'spring.fStart', label: 'Pull when it catches the door', unit: 'N', v: 5, min: 0, max: 40, step: 0.5, si: 1, show: (V) => V['spring.on'] },
+    { id: 'spring.fEnd', label: 'Pull at the bumper', unit: 'N', v: 5, min: 0, max: 40, step: 0.5, si: 1, help: 'Same as above for a constant-force spring; lower for an ordinary spring that relaxes as it pulls.', show: (V) => V['spring.on'] },
+    { id: 'spring.bothEnds', type: 'check', label: 'Spring at the open stop too', v: true, show: (V) => V['spring.on'] },
 
     { g: 'Test' },
     { id: 'test.start', label: 'Start, distance from the stop', unit: 'mm', v: 300, min: 20, max: 1500, step: 10, si: 1e-3 },
@@ -72,13 +81,13 @@
     { id: 'test.pullRate', label: 'Pull test: force rise', unit: 'N/s', v: 10, min: 1, max: 100, step: 1, si: 1 },
   ];
   const DEFAULTS = Object.fromEntries(SCHEMA.filter((s) => s.id).map((s) => [s.id, s.v]));
-  const STORE = 'door-magnet-lab-v1';
+  const STORE = 'door-magnet-lab-02';
   let V = { ...DEFAULTS };
   try { Object.assign(V, JSON.parse(localStorage.getItem(STORE) || '{}')); } catch (e) { /* storage blocked */ }
   const save = () => { try { localStorage.setItem(STORE, JSON.stringify(V)); } catch (e) { /* ignore */ } };
 
   function toParams() {
-    const P = { door: {}, bumper: {}, latch: {}, brake: {}, test: {} };
+    const P = { door: {}, bumper: {}, latch: {}, brake: {}, spring: {}, test: {} };
     for (const s of SCHEMA) {
       if (!s.id) continue;
       const [grp, key] = s.id.split('.');
@@ -274,7 +283,9 @@
       db.innerHTML = `Damping <b>${f1(B.cTotal)} N·s/m</b> at each end (${f1(B.cPer)} per magnet), from the eddy-current solution on the ${f1(P.brake.width * 1e3)} mm strip.<br>
         To slow a ${P.test.speed} m/s push to 0.3 m/s over this zone you need about <b>${f1(need)} N·s/m</b>.` +
         (P.brake.mode === 'hanger' ? `<br>Magnet face to copper: <b>${f1(B.gap * 1e3)} mm</b>. Magnet group ${f1(B.rowLen * 1e3)} × ${f1(B.height * 1e3)} mm.` : '') +
-        (B.sideLoad ? `<br>The brake magnets pull the hanger onto the steel rail with about <b>${f1(B.sideLoad)} N</b>, all along the travel (the whole rail is steel).` : '');
+        (B.sides === 2
+          ? `<br>Front ${f1(B.cFront)} + back ${f1(B.cBack)} N·s/m. Each side pulls ${f1(B.pullEach)} N towards the rail; off centre by ${f1(P.brake.offset * 1e3)} mm the net pull is <b>${f1(B.sideLoad)} N</b>. The U-bracket is squeezed with ${f1(B.squeeze)} N.`
+          : (B.sideLoad ? `<br>The brake magnets pull the hanger onto the steel rail with about <b>${f1(B.sideLoad)} N</b>, all along the travel (the whole rail is steel).` : ''));
     } else db.textContent = 'Brake off.';
   }
   function zoneLength() {
@@ -426,6 +437,7 @@
       { name: 'Brake', color: '--series-2', data: t.map((x, i) => [x, r.brake[i]]) },
       { name: runInfo.kind === 'pull' ? 'Hand' : 'Friction', color: '--series-3', data: t.map((x, i) => [x, runInfo.kind === 'pull' ? r.hand[i] : r.friction[i]]) },
     ];
+    if (model.spring && model.spring.on) series.push({ name: 'Spring', color: '--series-4', data: t.map((x, i) => [x, r.spring[i]]) });
     if (!model.brake) series.splice(1, 1);
     charts.force.set(series);
     legend($('#lg-force'), series.map((s) => [s.name, s.color]));
@@ -560,6 +572,12 @@
     drawRailStrip(g, W);
     const Wo = mapper(W.x(G.xOpen), top * s + 10, s, true);
     if (model.both) drawRailStrip(g, Wo);
+    if (model.spring && model.spring.on) {
+      const sr = model.spring.reach * 1000;
+      g.strokeStyle = css('--series-4'); g.lineWidth = 2; g.setLineDash([6, 4]);
+      for (const M2 of model.spring.bothEnds ? [W, Wo] : [W]) { g.beginPath(); g.moveTo(M2.x(0), M2.y(-48)); g.lineTo(M2.x(sr), M2.y(-48)); g.stroke(); }
+      g.setLineDash([]);
+    }
     // door (body, plates, straps, wheels)
     rect(g, W, p + G.doorLeft, p + G.doorLeft + G.doorW, G.doorTop - 900, G.doorTop, C.wood, C.wood2);
     const xe1 = G.xb - G.e0 + p;
@@ -627,7 +645,7 @@
     }
     g.fillStyle = text; g.textAlign = 'left'; g.textBaseline = 'top';
     const lines = [
-      `Magnets ${f1(f.latch * sign)} N${model.brake ? ` · brake ${f1(f.brake * sign)} N` : ''}`,
+      `Magnets ${f1(f.latch * sign)} N${model.brake ? ` · brake ${f1(f.brake * sign)} N` : ''}${model.spring && model.spring.on ? ` · spring ${f1((f.spring || 0) * sign)} N` : ''}`,
       f.bumper ? `Bumper ${f1(Math.abs(f.bumper))} N, squashed ${f1(Math.max(0, -dist))} mm` : `${f1(dist)} mm from the bumper`,
     ];
     const tw = Math.max(...lines.map((l) => g.measureText(l).width));
@@ -643,7 +661,7 @@
     const r = run.rec;
     if (!r.t.length) return { p: run.final.p, v: 0, latch: 0, brake: 0, bumper: 0 };
     let i = Math.min(r.t.length - 1, Math.max(0, Math.round(t / 0.004)));
-    return { p: r.p[i], v: r.v[i], latch: r.latch[i], brake: r.brake[i], bumper: r.bumper[i], hand: r.hand[i] };
+    return { p: r.p[i], v: r.v[i], latch: r.latch[i], brake: r.brake[i], bumper: r.bumper[i], hand: r.hand[i], spring: r.spring ? r.spring[i] : 0 };
   }
   function drawFrame() {
     if (!run) return;
@@ -667,7 +685,9 @@
 
   // ---------------------------------------------------------------- questions
   const QUESTIONS = [
-    ['Bumper screw', null, 'The Ø25 × 15 mm bumper has a screw in the middle: is it a threaded stud moulded into the rubber, or a screw through it with the head on the door side?'],
+    ['Wall brackets', null, 'Is any wall bracket (under the round caps) between the two stops, inside the travel? The back magnets would hit it.'],
+    ['Wheel wobble', 'brake.offset', 'Push the bottom of the hanger strap towards and away from the wall: how many mm does it move?'],
+    ['Stopper behind the rail', null, 'Does the stopper clamp wrap behind the rail? The back magnet must not hit it at the stop.'],
     ['Usable space behind the strap', 'brake.gap', 'Owner: 15 mm strap to rail, "a little less available". What takes the rest (bolt caps on the rail face? how high?)'],
     ['Travel', 'door.travel', 'How far the door slides from bumper to bumper (tape measure, hanger to hanger travel).'],
     ['Rolling friction', 'door.crr', 'Pull the door slowly with a luggage scale and note the steady reading. Without a scale: set it rolling and see if it keeps going on its own.'],
@@ -682,8 +702,65 @@
     }).join('');
   }
 
+  // ---------------------------------------------------------------- verdict (recap 2026-11-22)
+  // sev: 'fund' = physics, no way around within this approach; 'part' = can be
+  // reduced, not removed; 'fix' = has a known fix.
+  const VERDICT_LEAD = [
+    ['bad', 'Blocked: the wall fixtures', 'Confirmed by the owner, 2026-11-22: the fixtures holding the rail block the back magnets. This layout cannot be built on this rail.'],
+    ['ok', 'What it proved: soft-close works', 'A strong brake (about 29 N·s/m) plus a constant 5 N spring over the last 250 mm: every push from 0.2 to 2.0 m/s ends closed and held; gentle pushes arrive at about 0.2 m/s. This carries over to the next approach.'],
+    ['mid', 'Needs', 'Room behind the rail clear of the wall brackets, a hanger that stays centred within about 1 mm, a metal U-bracket, and a constant-force spring with a catch at each stop.'],
+    ['mid', 'Opening', 'About 41 N to start (latch about 35 N + spring + friction), then the spring (5 N) over the last 250 mm, plus the brake if opened fast (about 15 N at 0.5 m/s).'],
+  ];
+  const PROBLEMS = [
+    ['1. Wall fixtures behind the rail (blocker)',
+     'The back magnets ride behind the rail; the fixtures holding the rail to the wall are in their way. Confirmed by the owner.',
+     'The rail is held off the wall by fixtures inside the travel.',
+     'None on this rail. Next approach: a copper fin under the rail between two rows of magnets (no magnets behind the rail).',
+     'fund'],
+    ['2. The hanger must stay centred',
+     'The two pulls (205 N each) cancel only when centred. Off centre by 0.5 mm: 27 N net; by 1.5 mm: 82 N, and gentle closes start to stop short.',
+     'The closer magnet always wins (unstable balance).',
+     'Keep the wheel from wobbling on the rail; a small guide roller or slider on the bracket fixes the distance.',
+     'part'],
+    ['3. The U-bracket is squeezed',
+     'About 410 N (N42) to 510 N (N52) pulls the two arms towards the rail.',
+     'Each magnet pulls itself towards the steel rail.',
+     'Aluminium or steel U-bracket, not printed plastic (it would bend and creep).',
+     'fix'],
+    ['4. The spring needs a catch',
+     'A spring that pulls the door over the last 250 mm must let go further out, and get re-armed when the door opens.',
+     'Constant pull over the last 250 mm only.',
+     'Constant-force spring with a hook that catches the hanger at 250 mm, or the catch from a commercial soft-close kit.',
+     'part'],
+    ['5. Very gentle pushes started outside the spring zone',
+     'A 0.05 to 0.1 m/s push from 300 mm stops by friction before the spring catches it.',
+     'Rolling friction; nothing pulls it until it reaches the spring.',
+     'Expected behaviour. A 400 mm strip and spring catch them too.',
+     'fix'],
+    ['6. Parts',
+     '4 blocks 30 × 40 × 10 (N52 best), 4 copper strips 40 × 2 × 250 mm, 2 metal U-brackets, 2 constant-force springs with catches, plus the approach 1 latch magnets.',
+     '',
+     '',
+     'part'],
+    ['7. Guessed inputs',
+     'Bumper stiffness and bounce, rolling friction, side-pull friction, travel, magnet grade.',
+     'Not measured yet.',
+     'The same tests as approach 1. The two-sided brake makes the result much less sensitive to the side-pull friction.',
+     'part'],
+  ];
+  const SEV = { fund: 'No way round here', part: 'Can be reduced', fix: 'Has a fix' };
+  function renderVerdict() {
+    const el = document.getElementById('verdict');
+    if (!el) return;
+    el.innerHTML = `<div class="lead">${VERDICT_LEAD.map(([c, t, d]) => `<div class="${c}"><b>${t}</b>${d}</div>`).join('')}</div>
+      <table class="ptable"><thead><tr><th>Problem</th><th>What happens</th><th>Cause</th><th>Way around</th><th></th></tr></thead><tbody>
+      ${PROBLEMS.map(([p, w, c, f, sev]) => `<tr><td>${p}</td><td>${w}</td><td>${c}</td><td>${f}</td><td><span class="sev ${sev}">${SEV[sev]}</span></td></tr>`).join('')}
+      </tbody></table>`;
+  }
+
   // ---------------------------------------------------------------- wiring
   function init() {
+    renderVerdict();
     buildPanel();
     initCharts();
     document.querySelectorAll('[data-test]').forEach((b) => b.addEventListener('click', () => runTest(b.dataset.test)));
@@ -697,7 +774,7 @@
     $('#btn-reset').addEventListener('click', () => { V = { ...DEFAULTS }; save(); buildPanel(); rebuild(); });
     // The setup that works in the model: a dead bumper (bounce 0.2) and the magnet on a
     // sponge pad 1 mm behind the rubber face, plus the rail brake.
-    const RECOMMENDED = { 'bumper.restitution': 0.2, 'latch.type': 'bumper', 'latch.mount': 'embedded', 'latch.recess': 1, 'latch.hangerMag': true, 'brake.mode': 'hanger' };
+    const RECOMMENDED = { 'bumper.restitution': 0.2, 'brake.grade': 'N52' };
     $('#btn-recommended').addEventListener('click', () => { V = { ...DEFAULTS, ...RECOMMENDED }; save(); buildPanel(); rebuild(); });
     $('#btn-theme').addEventListener('click', () => {
       const root = document.documentElement;

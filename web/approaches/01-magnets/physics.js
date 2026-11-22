@@ -304,7 +304,8 @@
         const aC = brakeActivity(Math.max(p, 0));
         const aO = both ? brakeActivity(Math.max(travel - p, 0)) : 0;
         r.brake = brakeForce(v, aC) + brakeForce(v, aO);
-        if (brake.sideLoad) r.extraFriction = P.brake.flangeMu * brake.sideLoad * Math.min(1, aC + aO);
+        // the whole rail is steel: the pull (and its friction) acts all along the travel, not only over the copper
+        if (brake.sideLoad) r.extraFriction = P.brake.flangeMu * brake.sideLoad;
       }
       return r;
     }

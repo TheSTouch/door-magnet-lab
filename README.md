@@ -32,7 +32,16 @@ door and latch it at both ends with magnets, using the existing stoppers.
 ## The simulator: `web/`
 
 Open `web/index.html` in a browser (double-click is enough; no server and no
-internet needed).
+internet needed). It lists the approaches; each one is a self-contained page in
+`web/approaches/<nn>-<name>/` with its own physics model, kept as it was when
+explored, so a new approach never changes an old one.
+
+| Page | Approach | Status |
+|------|----------|--------|
+| `approaches/01-magnets/` | Eddy-current brake (copper on the rail, magnets on the hangers) and magnetic latch in the bumper | Explored. Latch works; the slow-down is weak and cannot hand over a slow door. Full recap of problems, causes and ways around at the top of the page. |
+| `approaches/02-double-brake/` | 30 × 40 × 10 blocks on both sides of the rail over copper on both faces, constant-force pull-in spring over the last 250 mm, latch from approach 1 | Blocked: the wall fixtures behind the rail are in the way. Kept because it shows that a strong brake plus a long constant-force spring makes a real soft-close (every push 0.2–2.0 m/s ends closed, gentle ones arrive at 0.2 m/s). |
+
+What follows describes approach 1.
 
 - **Left panel:** every parameter. A ✓ means the value was measured by the owner;
   everything else is a default until measured. Values are kept in the browser.
@@ -44,9 +53,9 @@ internet needed).
 - **Charts:** distance, speed and forces over time; latch force against distance
   from the bumper; a sweep of push speeds showing which ones end latched.
 - **URL hash** to reopen a setup or a moment, for example
-  `index.html#test=pull&t=0.5&brake.mode=hanger&latch.airGap=1.5`.
+  `approaches/01-magnets/index.html#test=pull&t=0.5&brake.mode=hanger&latch.airGap=1.5` (old links with a hash on `web/index.html` are forwarded there).
 
-### Physics (in `web/physics.js`)
+### Physics (in `web/approaches/01-magnets/physics.js`)
 
 | Part | Model |
 |------|-------|
@@ -54,7 +63,7 @@ internet needed).
 | Bumper | Hunt–Crossley contact `F = k d^1.5 (1 + c d'/v_in)`, damping set from a restitution value |
 | Magnet pull | on-axis field of a cylinder magnet plus its image in the plate, scaled so Ø15 × 5 N42 ≈ 46 N on contact (or use the seller's figure); thin-plate saturation estimate |
 | Latch (sideways) | energy method: the pull integrated from the gap outwards (U0) is released as the plate slides under the magnet, spread over the magnet's chord, with fringing blur growing with the gap |
-| Eddy brake | `F = c v / (1 + (v/vc)^2)`. `c` is solved numerically in `web/eddy.js`: thin-sheet currents on the real strip width (Neumann edges, exact DCT Poisson solve), exact off-axis field of each disc magnet, alternating poles, mirror image for the steel behind the strip. Checked against the exact point-dipole result to 0.05 % |
+| Eddy brake | `F = c v / (1 + (v/vc)^2)`. `c` is solved numerically in `web/approaches/01-magnets/eddy.js`: thin-sheet currents on the real strip width (Neumann edges, exact DCT Poisson solve), exact off-axis field of each disc magnet, alternating poles, mirror image for the steel behind the strip. Checked against the exact point-dipole result to 0.05 % |
 
 All of these are estimates to be calibrated on the real door. The model ranks
 designs well; the exact numbers need the measurements listed at the bottom of the
@@ -128,4 +137,5 @@ issue or a pull request.
 |------|--------|
 | 2026-11-21 | Photos reviewed; simulator v1 with latch, bumper, eddy brake, three tests, speed sweep |
 | 2026-11-21 | Published as open source (MIT) |
+| 2026-11-22 | App split into one page per approach; approach 1 recap of problems; approach 2 (two-sided brake + spring), blocked by the wall fixtures |
 | 2026-11-22 | Eddy solver on the real strip width; magnet-in-bumper latch, hanger magnet, block magnets, rows, snap-on mounting |
